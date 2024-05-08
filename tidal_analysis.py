@@ -2,7 +2,17 @@
 
 # import the modules you need here
 import argparse
+import numpy as np
+import panda as pd
+import matplotlib.pyplot as plt
+import datetime as dt
+import os
+import pytz
+import wget
+import uptide
+import math
 
+# 
 def read_tidal_data(filename):
 
     return 0
