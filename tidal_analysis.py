@@ -3,23 +3,39 @@
 # import the modules you need here
 import argparse
 import numpy as np
-import panda as pd
+import pandas as pd
 import matplotlib.pyplot as plt
-import datetime as dt
+import datetime
 import os
 import pytz
 import wget
-import uptide
+import uptide 
 import math
 
-# 
-def read_tidal_data(filename):
+data1 = "data/1947ABE.txt"
+data2 = "data/1946ABE.txt"
 
-    return 0
+def read_tidal_data(data1):
     
-def extract_single_year_remove_mean(year, data):
-   
+    # read and import data
+    # ignoring header and naming columns
+    data1 = pd.read_table(data1, skiprows=11, names=["Cycle", "Date", "Time", "Sea Level", "Residual"], sep=r'\s+')
+    # combining date and time columns
+    data1["DateTime"] = pd.to_datetime(data1["Date"] + ' ' + data1["Time"])
+    # removing unnecessary columns 
+    data1 = data1.drop(["Cycle", "Date", "Time", "Residual"], axis = 1)
+    # setting datetime as index
+    data1 = data1.set_index("DateTime")
+    # removing M, N, and T data
+    data1.replace(to_replace=".*[MNT]$",value={'Sea Level':np.nan},regex=True,inplace=True)
+    # converting sea level column from object to float
+    data1["Sea Level"] = data1["Sea Level"].astype(float)
+    
+    return data1
+    
 
+def extract_single_year_remove_mean(year, data):
+    
     return 
 
 
