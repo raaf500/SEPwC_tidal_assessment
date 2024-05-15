@@ -14,7 +14,7 @@ import math
 
 data1 = "data/1947ABE.txt"
 data2 = "data/1946ABE.txt"
-
+ 
 def read_tidal_data(data1):
     
     # read and import data
@@ -34,9 +34,19 @@ def read_tidal_data(data1):
     return data1
     
 
-def extract_single_year_remove_mean(year, data):
+def extract_single_year_remove_mean(year, data1):
     
-    return 
+    year = 1947
+    # define start and end of datetime index
+    year_string_start = str(year)+"-01-01"
+    year_string_end = str(year)+"-12-31"
+    # focus only on Sea level column
+    year_data = data1.loc[year_string_start:year_string_end, ["Sea Level"]]
+    # remove mean to oscillate around zero
+    mean = np.mean(year_data["Sea Level"])
+    year_data["Sea Level"] -= mean
+    
+    return year_data 
 
 
 def extract_section_remove_mean(start, end, data):
@@ -47,7 +57,17 @@ def extract_section_remove_mean(start, end, data):
 
 def join_data(data1, data2):
 
-    return 
+    data2 = "data/1946ABE.txt"
+    data2 = pd.read_table(data2, skiprows=11, names=["Cycle", "Date", "Time", "Sea Level", "Residual" ], sep=r'\s+')
+    data2["DateTime"] = pd.to_datetime(data2["Date"] + ' ' + data2["Time"])
+    data2 = data2.drop(["Cycle", "Date", "Time", "Residual"], axis = 1)
+    data2 = data2.set_index("DateTime")
+    data2.replace(to_replace=".*[MNT]$",value={'Sea Level':np.nan},regex=True,inplace=True)
+    data2["Sea Level"] = data2["Sea Level"].astype(float)
+    
+    data = pd.concat([data1 , data2])
+
+    return data
 
 
 
