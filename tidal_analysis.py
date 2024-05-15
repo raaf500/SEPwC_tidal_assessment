@@ -13,7 +13,6 @@ import uptide
 import math
 
 data1 = "data/1947ABE.txt"
-data2 = "data/1946ABE.txt"
  
 def read_tidal_data(data1):
     
@@ -57,18 +56,10 @@ def extract_section_remove_mean(start, end, data):
 
 def join_data(data1, data2):
 
-    data2 = "data/1946ABE.txt"
-    data2 = pd.read_table(data2, skiprows=11, names=["Cycle", "Date", "Time", "Sea Level", "Residual" ], sep=r'\s+')
-    data2["DateTime"] = pd.to_datetime(data2["Date"] + ' ' + data2["Time"])
-    data2 = data2.drop(["Cycle", "Date", "Time", "Residual"], axis = 1)
-    data2 = data2.set_index("DateTime")
-    data2.replace(to_replace=".*[MNT]$",value={'Sea Level':np.nan},regex=True,inplace=True)
-    data2["Sea Level"] = data2["Sea Level"].astype(float)
-    
-    data = pd.concat([data1 , data2])
-
+    data2 = read_tidal_data("data/1946ABE.txt")
+    data = pd.concat([data2, data1])
+   
     return data
-
 
 
 def sea_level_rise(data):

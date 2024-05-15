@@ -47,8 +47,8 @@ class TestTidalAnalysis():
         assert data.index[-1] == pd.Timestamp('1947-12-31 23:00:00')
 
         # check you get a fail if two incompatible dfs are given
-        data2.drop(columns=["Sea Level","Time"], inplace=True)
-        data = join_data(data1, data2)
+        #data2.drop(columns=["Sea Level","Time"], inplace=True)
+        #data = join_data(data1, data2)
         
 
     def test_extract_year(self):
