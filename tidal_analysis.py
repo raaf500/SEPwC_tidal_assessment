@@ -57,8 +57,9 @@ def extract_section_remove_mean(start, end, data):
 def join_data(data1, data2):
 
     data2 = read_tidal_data("data/1946ABE.txt")
+    # https://saturncloud.io/blog/pandas-how-to-concatenate-dataframes-with-different-columns/
     data = pd.concat([data2, data1])
-   
+    
     return data
 
 
