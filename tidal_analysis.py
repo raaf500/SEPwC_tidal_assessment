@@ -50,8 +50,19 @@ def extract_single_year_remove_mean(year, data1):
 
 def extract_section_remove_mean(start, end, data):
 
+    start_date = "1946-12-15"
+    end_date = "1947-03-10"
+    year1946_47 = data.loc[start_date:end_date]
+    mean_sea_level = np.mean(year1946_47["Sea Level"])
+    year1946_47["Sea Level"] -= mean_sea_level
+    
+    start_segment = "1947-01-15"
+    end_segment = "1947-03-10"
+    data_segment = data.loc[start_segment:end_segment]
+    mean_sea_level_segment = np.mean(data_segment["Sea Level"])
+    data_segment["Sea Level"] -= mean_sea_level_segment
 
-    return 
+    return year1946_47, data_segment
 
 
 def join_data(data1, data2):
