@@ -11,6 +11,7 @@ import pytz
 import wget
 import uptide 
 import math
+from scipy import stats
 
 data1 = "data/1947ABE.txt"
  
@@ -49,24 +50,25 @@ def extract_single_year_remove_mean(year, data1):
 
 
 def extract_section_remove_mean(start, end, data):
-
+    
     start_date = "1946-12-15"
     end_date = "1947-03-10"
     year1946_47 = data.loc[start_date:end_date]
     mean_sea_level = np.mean(year1946_47["Sea Level"])
     year1946_47["Sea Level"] -= mean_sea_level
-    
+
     start_segment = "1947-01-15"
     end_segment = "1947-03-10"
     data_segment = data.loc[start_segment:end_segment]
     mean_sea_level_segment = np.mean(data_segment["Sea Level"])
     data_segment["Sea Level"] -= mean_sea_level_segment
-
-    return year1946_47, data_segment
+    
+    return year1946_47
 
 
 def join_data(data1, data2):
 
+    # read and format data2 through function
     data2 = read_tidal_data("data/1946ABE.txt")
     # https://saturncloud.io/blog/pandas-how-to-concatenate-dataframes-with-different-columns/
     data = pd.concat([data2, data1])
@@ -76,18 +78,42 @@ def join_data(data1, data2):
 
 def sea_level_rise(data):
 
-                                                     
-    return 
+    filtered_data = data.dropna()
+
+    hours = filtered_data.index.to_numpy()
+    sea_level = filtered_data["Sea Level"].to_numpy()
+
+    slope, intercept, r_value, p_value, std_err = stats.linregress(hours.astype('int64') / 86400, sea_level)
+
+    return slope, p_value
+
+
+
+
+
+
+
+
 
 def tidal_analysis(data, constituents, start_datetime):
 
+    
 
     return 
+
+
+
+
+
 
 def get_longest_contiguous_data(data):
 
 
     return 
+
+
+
+
 
 if __name__ == '__main__':
 
