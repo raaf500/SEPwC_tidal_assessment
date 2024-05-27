@@ -80,13 +80,6 @@ def sea_level_rise(data):
     return slope, p_value
 
 
-
-
-
-
-
-
-
 def tidal_analysis(data, constituents, start_datetime):
 
     
@@ -100,6 +93,7 @@ def tidal_analysis(data, constituents, start_datetime):
 
 def get_longest_contiguous_data(data):
 
+    # No test for this so use your brain
 
     return 
 
@@ -126,5 +120,9 @@ if __name__ == '__main__':
     dirname = args.directory
     verbose = args.verbose
     
+    # use functions here to print decent output
+    # create a loop for all files, add them one by one, sicking one to another
+    # eg. add one to another, then add another to the two, 
+    # then add another to the three, etc
 
 
