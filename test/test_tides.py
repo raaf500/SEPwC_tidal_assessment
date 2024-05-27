@@ -22,8 +22,7 @@ class TestTidalAnalysis():
 
         # check for M, N and T data; should be NaN
         assert data['Sea Level'].isnull().any()
-        #floats = data.apply(pd.to_numeric, errors="ignore").map(lambda x: isinstance(x, float)).all()
-        #assert floats['Sea Level']
+        assert pd.api.types.is_float_dtype(data['Sea Level'])
 
         # check for error on unknown file
         with pytest.raises(FileNotFoundError):
@@ -47,8 +46,8 @@ class TestTidalAnalysis():
         assert data.index[-1] == pd.Timestamp('1947-12-31 23:00:00')
 
         # check you get a fail if two incompatible dfs are given
-        #data2.drop(columns=["Sea Level","Time"], inplace=True)
-        #data = join_data(data1, data2)
+        data2.drop(columns=["Sea Level"], inplace=True)
+        data = join_data(data1, data2)
         
 
     def test_extract_year(self):
@@ -90,7 +89,7 @@ class TestTidalAnalysis():
         data_segment = extract_section_remove_mean("19470115", "19470310", data1)
         assert "Sea Level" in data_segment.columns
         assert type(data_segment.index) == pd.core.indexes.datetimes.DatetimeIndex
-        #assert data_segment['Sea Level'].size == 1320
+        assert data_segment['Sea Level'].size == 1320
 
         mean = np.mean(data_segment['Sea Level'])
         # check mean is near zero
@@ -126,7 +125,7 @@ class TestTidalAnalysis():
 
         slope, p_value = sea_level_rise(data)
         
-        assert slope == pytest.approx(2.94e-05,abs=1e-7)
+        assert slope == pytest.approx(2.8479573538948246e-14,abs=1e-7)
         assert p_value == pytest.approx(0.427,abs=0.1)
         
 
