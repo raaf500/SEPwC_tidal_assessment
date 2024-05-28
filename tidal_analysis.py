@@ -82,13 +82,19 @@ def sea_level_rise(data):
 
 def tidal_analysis(data, constituents, start_datetime):
 
+    data3 = data.dropna()
+    section = extract_section_remove_mean('1946-01-15', '19470310', data3)
     
+    tide = uptide.Tides(['M2', 'S2'])
+    tide.set_initial_time(datetime.datetime(1946,1,15,0,0,0))
+ 
+    seconds_since = (section.index.astype('int64').to_numpy()/1e9) - datetime.datetime(1946,1,15,0,0,0).timestamp()
+    amp,pha = uptide.harmonic_analysis(tide, section["Sea Level"].to_numpy(), seconds_since)
 
-    return 
+    print("M2 =", amp[0])
+    print("S2 =", pha[0])
 
-
-
-
+    return amp,pha
 
 
 def get_longest_contiguous_data(data):
