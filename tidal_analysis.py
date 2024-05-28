@@ -1,28 +1,30 @@
-#!/usr/bin/env python3
+"""
+Tidal Analysis Script
 
-# import the modules you need here
+This script contains functions for reading tidal data, processing it, and performing tidal analysis.
+"""
+
+# import modules needed here
 import argparse
+import datetime
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import datetime
-import os
+import uptide
 import pytz
-import wget
-import uptide 
-import math
 from scipy import stats
 
 data1 = "data/1947ABE.txt"
- 
+
 def read_tidal_data(data1):
-    
+    """Reads 1947 Aberdeen tidal data from a 
+    file and returns a DataFrame."""
     # read and import data
     # ignoring header and naming columns
-    data1 = pd.read_table(data1, skiprows=11, names=["Cycle", "Date", "Time", "Sea Level", "Residual"], sep=r'\s+')
+    data1 = pd.read_table(data1, skiprows=11,
+                          names=["Cycle", "Date", "Time", "Sea Level", "Residual"], sep=r'\s+')
     # combining date and time columns
     data1["DateTime"] = pd.to_datetime(data1["Date"] + ' ' + data1["Time"])
-    # removing unnecessary columns 
+    # dropping unneccassary columns
     data1 = data1.drop(["Cycle", "Date", "Time", "Residual"], axis = 1)
     # setting datetime as index
     data1 = data1.set_index("DateTime")
@@ -30,12 +32,11 @@ def read_tidal_data(data1):
     data1.replace(to_replace=".*[MNT]$",value={'Sea Level':np.nan},regex=True,inplace=True)
     # converting sea level column from object to float
     data1["Sea Level"] = data1["Sea Level"].astype(float)
-    
     return data1
-    
 
 def extract_single_year_remove_mean(year, data1):
-    
+    """Extracts a complete year from 1947 
+    Aberdeen DataFrame and removes the mean."""
     year = 1947
     # define start and end of datetime index
     year_string_start = str(year)+"-01-01"
@@ -45,67 +46,51 @@ def extract_single_year_remove_mean(year, data1):
     # remove mean to oscillate around zero
     mean = np.mean(year_data["Sea Level"])
     year_data["Sea Level"] -= mean
-    
-    return year_data 
-
+    return year_data
 
 def extract_section_remove_mean(start, end, data):
-    
+    """Extracts a given section from tidal data 
+    supplied and removes the mean."""
     year1946_47 = data.loc[start:end]
     mean_sea_level = np.mean(year1946_47["Sea Level"])
     year1946_47["Sea Level"] -= mean_sea_level
-    
     return year1946_47
 
-
 def join_data(data1, data2):
-
+    """Reads 1946 Aberdeen and 
+    joins together with 1947 Aberdeen."""
     # read and format data2 through function
     data2 = read_tidal_data("data/1946ABE.txt")
     # https://saturncloud.io/blog/pandas-how-to-concatenate-dataframes-with-different-columns/
     data = pd.concat([data2, data1])
-    
     return data
 
-
 def sea_level_rise(data):
-
+    """Calculates the linear regression of sea level 
+    rise over time and returns slope and p-value."""
     filtered_data = data.dropna()
-
     hours = filtered_data.index.to_numpy()
     sea_level = filtered_data["Sea Level"].to_numpy()
-
-    slope, intercept, r_value, p_value, std_err = stats.linregress(hours.astype('int64') / 86400, sea_level)
-
+    slope, intercept, r_value, p_value, std_err = stats.linregress(hours.astype('int64') 
+                                                                  / 86400, sea_level)
     return slope, p_value
 
-
 def tidal_analysis(data, constituents, start_datetime):
-
+    """Performs harmonic analysis on 
+    tidal data and returns M2 and S2."""
     data3 = data.dropna()
     section = extract_section_remove_mean('1946-01-15', '19470310', data3)
-    
     tide = uptide.Tides(['M2', 'S2'])
     tide.set_initial_time(datetime.datetime(1946,1,15,0,0,0))
- 
     seconds_since = (section.index.astype('int64').to_numpy()/1e9) - datetime.datetime(1946,1,15,0,0,0).timestamp()
     amp,pha = uptide.harmonic_analysis(tide, section["Sea Level"].to_numpy(), seconds_since)
-
     print("M2 =", amp[0])
     print("S2 =", pha[0])
-
     return amp,pha
 
-
 def get_longest_contiguous_data(data):
-
     # No test for this so use your brain
-
-    return 
-
-
-
-
+    return
 
 if __name__ == '__main__':
 
@@ -125,10 +110,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dirname = args.directory
     verbose = args.verbose
-    
     # use functions here to print decent output
     # create a loop for all files, add them one by one, sicking one to another
-    # eg. add one to another, then add another to the two, 
+    # eg. add one to another, then add another to the two 
     # then add another to the three, etc
-
-
+    
