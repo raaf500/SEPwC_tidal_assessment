@@ -131,6 +131,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dirname = args.directory
     verbose = args.verbose
+
     # Used glob to find txt files in desired directory
     # https://www.delftstack.com/howto/python/read-multiple-csv-files-in-python/
     all_files = glob.glob(os.path.join(dirname, "*.txt"))
@@ -148,20 +149,22 @@ if __name__ == '__main__':
     # Ensure index is DateTime
     all_data = all_data.sort_index()
 
+    # Print station name
+    print("\nStation name:" + " " + (dirname))
+
     # Print head and tail of tidal data
-    print("Tidal Data:")
+    print("\nTidal Data:")
     print(all_data)
 
     # Calculate and print sea level rise
     gradient, p_val = sea_level_rise(all_data)
-    print("\nSea Level Rise:")
+    print("\nSea Level Rise over time (m):")
     print("Slope:", gradient)
     print("p-value:", p_val)
 
     # Perform and print tidal analysis
     datetime = all_data.index.min()
     amp_outer,pha_outer = tidal_analysis(all_data, ['M2', 'S2'], datetime)
-    print("\nTidal Analysis:")
-    print("M2:", amp_outer[0])
-    print("S2:", amp_outer[1])
-    
+    print("\nTidal Analysis (m):")
+    print("M2 Amplitude:", amp_outer[0])
+    print("S2 Amplitude:", amp_outer[1])
