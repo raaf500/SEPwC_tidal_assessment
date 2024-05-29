@@ -6,11 +6,11 @@ This script contains functions for reading tidal data, processing it, and perfor
 
 # import modules needed here
 import argparse
-import datetime
 import numpy as np
 import pandas as pd
 import uptide
-import pytz
+import os
+import glob
 from scipy import stats
 
 data1 = "data/1947ABE.txt"
@@ -24,7 +24,7 @@ def read_tidal_data(data1):
                           names=["Cycle", "Date", "Time", "Sea Level", "Residual"], sep=r'\s+')
     # combining date and time columns
     data1["DateTime"] = pd.to_datetime(data1["Date"] + ' ' + data1["Time"])
-    # dropping unneccassary columns
+    # dropping unnecessary columns
     data1 = data1.drop(["Cycle", "Date", "Time", "Residual"], axis = 1)
     # setting datetime as index
     data1 = data1.set_index("DateTime")
@@ -78,14 +78,15 @@ def sea_level_rise(data):
 def tidal_analysis(data, constituents, start_datetime):
     """Performs harmonic analysis on 
     tidal data and returns M2 and S2."""
+    # https://jhill1.github.io/SEPwC.github.io/Mini_courses.html#tidal-analysis-in-python
     data3 = data.dropna()
-    section = extract_section_remove_mean('1946-01-15', '19470310', data3)
-    tide = uptide.Tides(['M2', 'S2'])
-    tide.set_initial_time(datetime.datetime(1946,1,15,0,0,0))
-    seconds_since = (section.index.astype('int64').to_numpy()/1e9) - datetime.datetime(1946,1,15,0,0,0).timestamp()
+    start_date = data3.index.min().strftime('%Y-%m-%d')
+    end_date = data3.index.max().strftime('%Y-%m-%d') 
+    section = extract_section_remove_mean(start_date, end_date, data3)
+    tide = uptide.Tides(constituents)
+    tide.set_initial_time(start_datetime)
+    seconds_since = (section.index.astype('int64').to_numpy()/1e9) - start_datetime.timestamp()
     amp,pha = uptide.harmonic_analysis(tide, section["Sea Level"].to_numpy(), seconds_since)
-    print("M2 =", amp[0])
-    print("S2 =", pha[0])
     return amp,pha
 
 def get_longest_contiguous_data(data):
@@ -110,8 +111,41 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dirname = args.directory
     verbose = args.verbose
-    # use functions here to print decent output
-    # create a loop for all files, add them one by one, sicking one to another
-    # eg. add one to another, then add another to the two 
-    # then add another to the three, etc
+   
+    # Use glob to find all text files in the directory
+    # https://www.delftstack.com/howto/python/read-multiple-csv-files-in-python/
+    all_files = glob.glob(os.path.join(dirname, "*.txt"))
+
+    # Read and join data files one by one to an empty dataframe
+    # https://www.delftstack.com/howto/python/read-multiple-csv-files-in-python/
+    all_data = pd.DataFrame()
+    for filename in all_files:
+        data = read_tidal_data(filename)
+        all_data = pd.concat([all_data, data])
+
+    # Filter out NaN values
+    all_data = all_data.dropna()
+
+    # Ensure data is DateTime index 
+    all_data = all_data.sort_index()
+
+    # Print head and tail of tidal data
+    print("Tidal Data:")
+    print(all_data)
+
+    # Calculate and print sea level rise
+    slope, p_value = sea_level_rise(all_data)
+    print("\nSea Level Rise:")
+    print("Slope:", slope)
+    print("p-value:", p_value)
+    
+    # Perform and print tidal analysis
+    start_datetime = all_data.index.min()
+    amp, pha = tidal_analysis(all_data, ['M2', 'S2'], start_datetime)
+    print("\nTidal Analysis:")
+    print("M2:", amp[0])
+    print("S2:", amp[1])
+    
+   
+    
     
