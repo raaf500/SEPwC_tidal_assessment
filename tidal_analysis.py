@@ -19,14 +19,15 @@ DATA1 = "data/1947ABE.txt"
 def read_tidal_data(data1):
 
     """Reads 1947 Aberdeen tidal data from a 
-    file and returns a DataFrame."""
+    txtfile and returns a DataFrame."""
 
     # read and import data
     # https://www.geeksforgeeks.org/pandas-read_table-function/
     # https://jhill1.github.io/SEPwC.github.io/Mini_courses.html#tidal-analysis-in-python
     # ignoring header and naming columns
     data1 = pd.read_table(data1, skiprows=11,
-                          names=["Cycle", "Date", "Time", "Sea Level", "Residual"], sep=r'\s+')
+                          names=["Cycle", "Date", "Time", "Sea Level", "Residual"], sep=r'\s+'
+                          )
     # combining date and time columns
     # https://scales.arabpsychology.com/stats/how-do-i-combine-two-date-and-time-columns-into-one-in-a-pandas-dataframe/
     data1["DateTime"] = pd.to_datetime(data1["Date"] + ' ' + data1["Time"])
@@ -35,6 +36,7 @@ def read_tidal_data(data1):
     # setting datetime as index
     data1 = data1.set_index("DateTime")
     # removing M, N, and T data
+    # https://jhill1.github.io/SEPwC.github.io/Mini_courses.html#tidal-analysis-in-python
     data1.replace(to_replace=".*[MNT]$",value={'Sea Level':np.nan},regex=True,inplace=True)
     # converting sea level column from object to float
     # https://sentry.io/answers/change-a-column-type-in-a-dataframe-in-python-pandas/#:~:text=If%20we%20want%20to%20convert,should%20use%20the%20to_numeric%20function.
@@ -65,12 +67,12 @@ def extract_section_remove_mean(start, end, data):
     """Extracts a given section from tidal data 
     supplied and removes the mean."""
 
-    # variable will only lock on the date/time supplied
+    # variable will only lock on the datetime supplied
     year1946_47 = data.loc[start:end]
     # calculate mean of data supplied
     mean_sea_level = np.mean(year1946_47["Sea Level"])
     # remove mean to oscillate around zero
-    year1946_47["Sea Level"] -= mean_sea_level
+    year1946_47.loc[:, "Sea Level"] -= mean_sea_level
 
     return year1946_47
 
@@ -90,17 +92,17 @@ def join_data(data1, data2):
 def sea_level_rise(data):
 
     """Calculates the linear regression of sea level 
-    rise over time and returns slope and p-value."""
+    rise over time by returning the slope and p-value."""
 
     # filtering out NaN values from combined dataset
     filtered_data = data.dropna()
-    # extracting both index of filtered dataframe and Sea level column,
-    # converting it into a NumPy array, required for a linregression.
+    # extract both index of filtered dataframe and Sea level column,
+    # convert it into a NumPy array, required for a linregression
     # https://stackoverflow.com/questions/13187778/convert-pandas-dataframe-to-numpy-array
     hours = filtered_data.index.to_numpy()
     sea_level = filtered_data["Sea Level"].to_numpy()
     # linear regression equation divided by the
-    # number of seconds in a day to find rise per day
+    # number of secs in an hour to find rise per hour
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.linregress.html
     slope, _, _, p_value, _  = stats.linregress(hours.astype('int64' ) / 86400, sea_level)
 
@@ -115,14 +117,14 @@ def tidal_analysis(data, constituents, start_datetime):
     data3 = data.dropna()
     # extract min and max dates from dataframe index
     # https://stackoverflow.com/questions/23178129/getting-min-and-max-dates-from-a-pandas-dataframe
-    # and format them as strings to be universal with other dataframes
+    # and format them as strings to work universally with other dataframes
     # https://sparkbyexamples.com/pandas/convert-pandas-datetimeindex-to-string/
     start_date = data3.index.min().strftime('%Y-%m-%d')
     end_date = data3.index.max().strftime('%Y-%m-%d').strip()
     # remove mean from dataframe with function
     section = extract_section_remove_mean(start_date, end_date, data3)
     # creating a tide variable with constituents
-    # making it ready for tidal analysis
+    # making it ready for tidal calculation
     # https://jhill1.github.io/SEPwC.github.io/Mini_courses.html#tidal-analysis-in-python
     tide = uptide.Tides(constituents)
     # setting initial time given for calculations
@@ -134,12 +136,28 @@ def tidal_analysis(data, constituents, start_datetime):
 
     return amp,pha
 
-#def get_longest_contiguous_data(data):
+def get_longest_contiguous_data(data):
 
-    #"""Gets the longest
-    #contiguous period of data."""
+    """Gets the longest contiguous
+    sequence of non-NaN values in a dataframe."""
 
-    #return
+    # https://stackoverflow.com/questions/41494444/pandas-find-longest-stretch-without-nan-values
+    # https://www.youtube.com/watch?v=7Z7x8zleA0w
+
+    # extract out values from DataFrame as an array
+    array = data.values
+    # boolean mask used to identify where NaN
+    # are in an array (start and end of list)
+    # https://www.educative.io/answers/what-is-the-numpyndarrayflatten-method-in-python#:~:text=flatten()%20method%20in%20Python%20is%20used%20to%20return%20a,is%20collapsed%20into%20one%20dimension.
+    mask = np.concatenate(([True], np.isnan(array.flatten()), [True]))
+    # identifying the start/stop limits in the array
+    start_stop = np.flatnonzero(mask[1:] != mask[:-1]).reshape(-1, 2)
+    # identify the start and end indices of
+    # longest sequence by comparing duration of all
+    # sequences and selecting the pair with the largest duration
+    commence, stop = start_stop[(start_stop[:, 1] - start_stop[:, 0]).argmax()]
+
+    return commence, stop
 
 if __name__ == '__main__':
 
@@ -171,28 +189,35 @@ if __name__ == '__main__':
         data_outer = read_tidal_data(filename)
         all_data = pd.concat([all_data, data_outer])
 
-    # filter out NaN values
-    all_data = all_data.dropna()
-
-    # ensure index is DateTime
+    # make sure index is DateTime
     all_data = all_data.sort_index()
 
-    # print station name
+    # print station name via directory name
     print("\nStation name:" + " " + (dirname))
 
     # print head and tail of given tidal data
     print("\nTidal Data:")
     print(all_data)
 
-    # calculate and print sea level rise
+    # calculate and print sea level rise using function,
+    # multiply by (8760 * 4) due to 15min intervals
+    # to find rise per year
     gradient, p_val = sea_level_rise(all_data)
-    print("\nSea Level Rise over time (m):")
-    print("Slope:", gradient)
+    rise_per_yr = gradient * (8760 * 4)
+    print("\nSea Level Rise per year (m):")
+    print("Slope:", rise_per_yr)
     print("p-value:", p_val)
 
-    # perform and print tidal analysis
+    # perform and print tidal analysis using function
     datetime = all_data.index.min()
     amp_outer,pha_outer = tidal_analysis(all_data, ['M2', 'S2'], datetime)
     print("\nTidal Analysis (m):")
     print("M2 Amplitude:", amp_outer[0])
     print("S2 Amplitude:", amp_outer[1])
+
+    # find the longest contiguous sequence of non-NaN values
+    begin, finish = get_longest_contiguous_data(all_data)
+    print("\nLongest contiguous sequence of non-NaN values:")
+    print("Starting index of longest contiguous sequence:", begin)
+    print("Ending index of longest contiguous sequence:", finish)
+    print("\n")
